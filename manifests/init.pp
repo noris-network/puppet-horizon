@@ -349,6 +349,10 @@
 #    (optional) Tuskar-UI - Deployment mode ('poc' or 'scale')
 #    Defaults to undef
 #
+#  [*secure_proxy_ssl_header*]
+#    (optional) Enable secure_proxy_ssl_header option in django
+#    Defaults to undef
+#
 # === Examples
 #
 #  class { 'horizon':
@@ -418,6 +422,7 @@ class horizon(
   $websso_initial_choice               = undef,
   $websso_choices                      = undef,
   $websso_idp_mapping                  = undef,
+  $secure_proxy_ssl_header             = undef,
   # DEPRECATED PARAMETERS
   $custom_theme_path                   = undef,
   $fqdn                                = undef,

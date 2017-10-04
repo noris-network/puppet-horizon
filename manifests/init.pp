@@ -238,6 +238,10 @@
 #    (optional) The base URL used to contruct horizon web addresses.
 #    Defaults to '/dashboard' or '/horizon' depending OS
 #
+#  [*root_path*]
+#    (optional) The path to the location of static assets.
+#    Defaults to "${::horizon::params::static_path}/openstack-dashboard"
+#
 #  [*session_timeout*]
 #    (optional) The session timeout for horizon in seconds. After this many seconds of inactivity
 #    the user is logged out.
@@ -281,6 +285,30 @@
 #   Valid values are 'legacy' and 'angular'
 #   Defaults to 'legacy'
 #
+#  [*password_retrieve*]
+#    (optional) Enables the use of 'Retrieve Password' in the Horizon Web UI.
+#    Defaults to false
+#
+#  [*disable_password_reveal*]
+#    (optional) Disables the use of reveal button for passwords in the UI.
+#    Defaults to false
+#
+#  [*enforce_password_check*]
+#    (optional) Disables Admin password prompt on Change Password form.
+#    Defaults to false
+#
+#  [*enable_secure_proxy_ssl_header*]
+#    (optional) Enables the SECURE_PROXY_SSL_HEADER option which makes django
+#    take the X-Forwarded-Proto header into account. Note that this is only
+#    recommended if you're running horizon behind a proxy.
+#    Defaults to false
+#
+#  [*disallow_iframe_embed*]
+#    (optional)DISALLOW_IFRAME_EMBED can be used to prevent Horizon from being embedded
+#    within an iframe. Legacy browsers are still vulnerable to a Cross-Frame
+#    Scripting (XFS) vulnerability, so this option allows extra security hardening
+#    where iframes are not used in deployment. Default setting is True.
+#
 #  [*websso_enabled*]
 #    (optional)Enable the WEBSSO_ENABLED option which turn on the keystone web
 #    single-sign-on if set to true.
@@ -319,11 +347,14 @@
 #        'acme_saml2' => ['acme', 'saml2'],
 #      }
 #
-#  [*enable_secure_proxy_ssl_header*]
-#    (optional) Enables the SECURE_PROXY_SSL_HEADER option which makes django
-#    take the X-Forwarded-Proto header into account. Note that this is only
-#    recommended if you're running horizon behind a proxy.
-#    Defaults to false
+#  [*password_validator*]
+#    (optional) Horizon provides a password validation check, which OpenStack cloud
+#    operators can use to enforce password complexity checks for users within horizon.
+#    A dictionary containing a regular expression can be used for password validation
+#    with help text that is displayed if the password does not pass validation.
+#
+#  [*password_validator_help*]
+#    (optional) Help text to display when password validation fails in horizon.
 #
 # === DEPRECATED group/name
 #
@@ -415,6 +446,7 @@ class horizon(
   $image_backend                       = {},
   $overview_days_range                 = undef,
   $root_url                            = $::horizon::params::root_url,
+  $root_path                           = "${::horizon::params::static_path}/openstack-dashboard",
   $session_timeout                     = 1800,
   $timezone                            = 'UTC',
   $secure_cookies                      = false,
@@ -424,11 +456,17 @@ class horizon(
   $default_theme                       = false,
   $password_autocomplete               = 'off',
   $images_panel                        = 'legacy',
+  $password_retrieve                   = false,
+  $disable_password_reveal             = false,
+  $enforce_password_check              = false,
+  $enable_secure_proxy_ssl_header      = false,
+  $disallow_iframe_embed               = true,
   $websso_enabled                      = false,
   $websso_initial_choice               = undef,
   $websso_choices                      = undef,
   $websso_idp_mapping                  = undef,
-  $enable_secure_proxy_ssl_header      = false,
+  $password_validator                  = undef,
+  $password_validator_help             = undef,
   # DEPRECATED PARAMETERS
   $custom_theme_path                   = undef,
   $fqdn                                = undef,
@@ -505,6 +543,7 @@ settings_local.py and parameter server_aliases for setting ServerAlias directive
   validate_hash($api_versions)
   validate_re($password_autocomplete, ['^on$', '^off$'])
   validate_re($images_panel, ['^legacy$', '^angular$'])
+  validate_absolute_path($root_path)
 
   if $cache_backend =~ /MemcachedCache/ {
     ensure_resources('package', { 'python-memcache' =>
@@ -562,7 +601,8 @@ settings_local.py and parameter server_aliases for setting ServerAlias directive
       horizon_ca     => $horizon_ca,
       extra_params   => $vhost_extra_params,
       redirect_type  => $redirect_type,
-      root_url       => $root_url
+      root_url       => $root_url,
+      root_path      => $root_path,
     }
   }
 

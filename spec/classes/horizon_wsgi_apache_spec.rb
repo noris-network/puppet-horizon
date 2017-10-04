@@ -218,18 +218,58 @@ describe 'horizon::wsgi::apache' do
         )
       end
     end
+
+    context 'with root_path set to /tmp/horizon' do
+      before do
+        params.merge!({
+          :root_path => '/tmp/horizon',
+        })
+      end
+
+      it 'configures webroot alias' do
+        if (Gem::Version.new(Puppet.version) >= Gem::Version.new('4.0'))
+          is_expected.to contain_apache__vhost('horizon_vhost').with(
+            'aliases' => [{'alias' => '/dashboard/static', 'path' => '/tmp/horizon/static'}],
+          )
+        else
+          is_expected.to contain_apache__vhost('horizon_vhost').with(
+            'aliases' => [['alias', '/dashboard/static'], ['path', '/tmp/horizon/static']],
+          )
+        end
+      end
+    end
   end
 
   shared_examples_for 'apache for horizon on Debian platforms' do
     it 'configures webroot alias' do
       if (Gem::Version.new(Puppet.version) >= Gem::Version.new('4.0'))
         is_expected.to contain_apache__vhost('horizon_vhost').with(
-          'aliases' => [{'alias' => '/horizon/static', 'path' => '/usr/share/openstack-dashboard/static'}],
+          'aliases' => [{'alias' => '/horizon/static', 'path' => '/var/lib/openstack-dashboard/static'}],
         )
       else
         is_expected.to contain_apache__vhost('horizon_vhost').with(
-          'aliases' => [['alias', '/horizon/static'], ['path', '/usr/share/openstack-dashboard/static']],
+          'aliases' => [['alias', '/horizon/static'], ['path', '/var/lib/openstack-dashboard/static']],
         )
+      end
+    end
+
+    context 'with root_path set to /tmp/horizon' do
+      before do
+        params.merge!({
+          :root_path => '/tmp/horizon',
+        })
+      end
+
+      it 'configures webroot alias' do
+        if (Gem::Version.new(Puppet.version) >= Gem::Version.new('4.0'))
+          is_expected.to contain_apache__vhost('horizon_vhost').with(
+            'aliases' => [{'alias' => '/horizon/static', 'path' => '/tmp/horizon/static'}],
+          )
+        else
+          is_expected.to contain_apache__vhost('horizon_vhost').with(
+            'aliases' => [['alias', '/horizon/static'], ['path', '/tmp/horizon/static']],
+          )
+        end
       end
     end
   end
@@ -246,7 +286,6 @@ describe 'horizon::wsgi::apache' do
 
         facts.merge!(OSDefaults.get_facts({
           :fqdn           => 'some.host.tld',
-          :processorcount => 2,
           :concat_basedir => '/var/lib/puppet/concat'
         }))
       end

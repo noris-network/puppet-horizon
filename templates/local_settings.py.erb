@@ -127,6 +127,16 @@ HORIZON_CONFIG = {
 #    "regex": '.*',
 #    "help_text": _("Your password does not meet the requirements."),
 #}
+<%if @password_validator %>
+HORIZON_CONFIG["password_validator"] = {
+    "regex": '<%= @password_validator %>',
+<%- if @password_validator_help -%>
+    "help_text": _("<%= @password_validator_help -%>"),
+<%- else -%>
+    "help_text": _("Your password does not meet the requirements."),
+<%- end -%>
+}
+<% end %>
 
 # Disable simplified floating IP address management for deployments with
 # multiple floating IP pools or complex network requirements.
@@ -140,6 +150,17 @@ HORIZON_CONFIG["password_autocomplete"] = "<%= @password_autocomplete %>"
 # Setting this to True will disable the reveal button for password fields,
 # including on the login form.
 #HORIZON_CONFIG["disable_password_reveal"] = False
+<% if @disable_password_reveal == true %>
+HORIZON_CONFIG["disable_password_reveal"] = True
+<% end %>
+
+# Set this to True to display an 'Admin Password' field on the Change Password
+# form to verify that it is indeed the admin logged-in who wants to change the
+# password
+#HORIZON_CONFIG["enforce_password_check"] = False
+<% if @enforce_password_check == true %>
+HORIZON_CONFIG["enforce_password_check"] = True
+<% end %>
 
 # Configure enabled image panel. It can be legacy or angular.
 #HORIZON_CONFIG["images_panel"] = "legacy"
@@ -316,6 +337,9 @@ OPENSTACK_KEYSTONE_BACKEND = {
 # Setting this to True, will add a new "Retrieve Password" action on instance,
 # allowing Admin session password retrieval/decryption.
 #OPENSTACK_ENABLE_PASSWORD_RETRIEVE = False
+<% if @password_retrieve -%>
+OPENSTACK_ENABLE_PASSWORD_RETRIEVE = True
+<% end -%>
 
 # The Launch Instance user experience has been significantly enhanced.
 # You can choose whether to enable the new launch instance experience,
@@ -975,3 +999,7 @@ REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES',
 # For more information see:
 # http://tinyurl.com/anticlickjack
 #DISALLOW_IFRAME_EMBED = True
+<% if @disallow_iframe_embed == true %>
+HORIZON_CONFIG["disallow_iframe_embed"] = True
+<% end %>
+

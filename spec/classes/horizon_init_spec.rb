@@ -127,6 +127,7 @@ describe 'horizon' do
           :default_theme                  => 'default',
           :password_autocomplete          => 'on',
           :images_panel                   => 'angular',
+          :password_retrieve              => true,
           :enable_secure_proxy_ssl_header => true,
         })
       end
@@ -173,6 +174,7 @@ describe 'horizon' do
           "    'profile_support': 'cisco',",
           "    'supported_provider_types': ['flat', 'vxlan'],",
           "    'supported_vnic_types': ['*'],",
+          'OPENSTACK_ENABLE_PASSWORD_RETRIEVE = True',
           'OPENSTACK_ENDPOINT_TYPE = "internalURL"',
           'SECONDARY_ENDPOINT_TYPE = "ANY-VALUE"',
           'API_RESULT_LIMIT = 4682',
@@ -263,6 +265,28 @@ describe 'horizon' do
           :horizon_cert => '/etc/pki/tls/certs/httpd.crt',
           :horizon_key  => '/etc/pki/tls/private/httpd.key',
           :horizon_ca   => '/etc/pki/tls/certs/ca.crt',
+        })
+      end
+    end
+
+    context 'with default root_path' do
+      it 'configures apache' do
+        is_expected.to contain_class('horizon::wsgi::apache').with({
+          :root_path    => "#{platforms_params[:root_path]}",
+        })
+      end
+    end
+
+    context 'with root_path set to /tmp/horizon' do
+      before do
+        params.merge!({
+          :root_path    => '/tmp/horizon',
+        })
+      end
+
+      it 'configures apache' do
+        is_expected.to contain_class('horizon::wsgi::apache').with({
+          :root_path    => '/tmp/horizon',
         })
       end
     end
@@ -413,6 +437,48 @@ describe 'horizon' do
       end
     end
 
+    context 'with disable password reveal enabled' do
+      before do
+        params.merge!({
+          :disable_password_reveal => true
+        })
+      end
+
+      it 'disable_password_reveal is configured' do
+        verify_concat_fragment_contents(catalogue, 'local_settings.py', [
+          'HORIZON_CONFIG["disable_password_reveal"] = True',
+        ])
+      end
+    end
+
+    context 'with enforce password check enabled' do
+      before do
+        params.merge!({
+          :enforce_password_check => true
+        })
+      end
+
+      it 'enforce_password_check is configured' do
+        verify_concat_fragment_contents(catalogue, 'local_settings.py', [
+          'HORIZON_CONFIG["enforce_password_check"] = True',
+        ])
+      end
+    end
+
+    context 'with disallow iframe embed enabled' do
+      before do
+        params.merge!({
+                        :disallow_iframe_embed => true
+                      })
+      end
+
+      it 'disallow_iframe_embed is configured' do
+        verify_concat_fragment_contents(catalogue, 'local_settings.py', [
+                                          'HORIZON_CONFIG["disallow_iframe_embed"] = True',
+                                        ])
+      end
+    end
+
     context 'with websso enabled' do
       before do
         params.merge!({
@@ -469,7 +535,6 @@ describe 'horizon' do
       let (:facts) do
         facts.merge!(OSDefaults.get_facts({
           :fqdn           => 'some.host.tld',
-          :processorcount => 2,
           :concat_basedir => '/var/lib/puppet/concat'
         }))
       end
@@ -479,11 +544,15 @@ describe 'horizon' do
         when 'Debian'
           { :config_file       => '/etc/openstack-dashboard/local_settings.py',
             :package_name      => 'openstack-dashboard',
-            :root_url          => '/horizon' }
+            :root_url          => '/horizon',
+            :root_path         => '/var/lib/openstack-dashboard',
+          }
         when 'RedHat'
           { :config_file       => '/etc/openstack-dashboard/local_settings',
             :package_name      => 'openstack-dashboard',
-            :root_url          => '/dashboard' }
+            :root_url          => '/dashboard',
+            :root_path         => '/usr/share/openstack-dashboard',
+          }
         end
       end
 

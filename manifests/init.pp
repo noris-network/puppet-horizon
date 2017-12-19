@@ -367,6 +367,12 @@
 #    Example:
 #      customization_module => "my_project.overrides"
 #
+#  [*horizon_upload_mode*]
+#    (optional)  Horizon provides the upload mode. the default mode is legancy, off 
+#     will disable the function in Horizon, direct will allowed the Useragent directly
+#     addressed the glance-api.      
+#
+#
 # === DEPRECATED group/name
 #
 #  [*fqdn*]
@@ -479,6 +485,7 @@ class horizon(
   $password_validator                  = undef,
   $password_validator_help             = undef,
   $customization_module                = undef,
+  $horizon_upload_mode                 = undef,
   # DEPRECATED PARAMETERS
   $custom_theme_path                   = undef,
   $fqdn                                = undef,

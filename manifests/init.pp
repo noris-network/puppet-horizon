@@ -368,7 +368,7 @@
 #      customization_module => "my_project.overrides"
 #
 #  [*horizon_upload_mode*]
-#    (optional)  Horizon provides the upload mode. the default mode is legancy, off 
+#    (optional)  Horizon provides the upload mode. the default mode is legacy, off 
 #     will disable the function in Horizon, direct will allowed the Useragent directly
 #     addressed the glance-api.      
 #

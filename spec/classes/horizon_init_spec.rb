@@ -507,6 +507,19 @@ describe 'horizon' do
         ])
       end
     end
+
+    context 'with upload mode' do
+      before do
+        params.merge!({
+          :horizon_upload_mode  => 'direct',
+        })
+      end
+      it 'sets HORIZON_IMAGES_UPLOAD_MODE in local_settings.py' do
+        verify_concat_fragment_contents(catalogue, 'local_settings.py', [
+	  'HORIZON_IMAGES_UPLOAD_MODE = direct',
+        ])
+      end
+    end
   end
 
   shared_examples_for 'horizon on RedHat' do

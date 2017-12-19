@@ -554,5 +554,12 @@ describe 'horizon' do
       it_behaves_like "horizon on #{facts[:osfamily]}"
     end
   end
+ end
 
-end
+  shared_examples_for 'uses the horizon_upload_mode' do
+    it 'sets HORIZON_IMAGES_UPLOAD_MODE in local_settings.py' do
+      verify_concat_fragment_contents(catalogue, 'local_settings.py', [
+        "HORIZON_IMAGES_UPLOAD_MODE= 'direct'",
+      ])
+    end
+  end

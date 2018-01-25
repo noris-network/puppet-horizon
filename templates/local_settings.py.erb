@@ -391,6 +391,14 @@ OPENSTACK_CINDER_FEATURES = {
 }
 <%-end-%>
 
+<%- if ! (@instance_options_real.empty?) -%>
+LAUNCH_INSTANCE_DEFAULTS = {
+<%- @instance_options_real.sort.each do |opt_name,opt_val| -%>
+    '<%= opt_name -%>': <%= opt_val.to_s.capitalize -%>,
+<%-end-%>
+}
+<%-end-%>
+
 # The OPENSTACK_NEUTRON_NETWORK settings can be used to enable optional
 # services provided by neutron. Options currently available are load
 # balancer service, security groups, quotas, VPN service.
@@ -503,6 +511,18 @@ OPENSTACK_IMAGE_BACKEND = {
 # custom properties should not be displayed in the Image Custom Properties
 # table.
 #IMAGE_RESERVED_CUSTOM_PROPERTIES = []
+
+# A dictionary of default settings for create image modal.
+#CREATE_IMAGE_DEFAULTS = {
+#    'image_visibility': "public",
+#}
+<% if @create_image_defaults %>
+CREATE_IMAGE_DEFAULTS = {
+<%- @create_image_defaults.sort.each do |opt_name,opt_val| -%>
+    '<%= opt_name %>': '<%= opt_val %>',
+<%- end -%>
+}
+<% end %>
 
 # OPENSTACK_ENDPOINT_TYPE specifies the endpoint type to use for the endpoints
 # in the Keystone service catalog. Use this setting when Horizon is running
@@ -986,7 +1006,8 @@ OVERVIEW_DAYS_RANGE = <%= @overview_days_range %>
 # See: https://wiki.openstack.org/wiki/Horizon/RESTAPI
 REST_API_REQUIRED_SETTINGS = ['OPENSTACK_HYPERVISOR_FEATURES',
                               'LAUNCH_INSTANCE_DEFAULTS',
-                              'OPENSTACK_IMAGE_FORMATS']
+                              'OPENSTACK_IMAGE_FORMATS',
+                              'CREATE_IMAGE_DEFAULTS']
 
 # Additional settings can be made available to the client side for
 # extensibility by specifying them in REST_API_ADDITIONAL_SETTINGS

@@ -100,7 +100,11 @@
 #    Defaults to 'http://docs.openstack.org'.
 #
 #  [*compress_offline*]
-#    (optional) Boolean to enable offline compress of assets.
+#    (optional) Boolean to configure offline compression of assets.
+#    Defaults to True
+#
+#  [*exec_compress_offline*]
+#    (optional) Boolean to enable the execution of manage.py to compress assets
 #    Defaults to True
 #
 #  [*hypervisor_options*]
@@ -498,6 +502,7 @@ class horizon(
   $wsgi_processes                      = '3',
   $wsgi_threads                        = '10',
   $compress_offline                    = true,
+  $exec_compress_offline               = true,
   $hypervisor_options                  = {},
   $cinder_options                      = {},
   $keystone_options                    = {},
@@ -671,7 +676,7 @@ settings_local.py and parameter server_aliases for setting ServerAlias directive
     require     => Package['horizon'],
   }
 
-  if $compress_offline {
+  if $exec_compress_offline {
     Concat[$::horizon::params::config_file] ~> Exec['refresh_horizon_django_compress']
     if $::os_package_type == 'rpm' {
       Concat[$::horizon::params::config_file] ~> Exec['refresh_horizon_django_cache'] -> Exec['refresh_horizon_django_compress']

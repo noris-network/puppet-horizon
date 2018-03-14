@@ -115,6 +115,7 @@ describe 'horizon' do
           :neutron_options                => {'enable_lb' => true, 'enable_firewall' => true, 'enable_quotas' => false, 'enable_security_group' => false, 'enable_vpn' => true,
                                             'enable_distributed_router' => false, 'enable_ha_router' => false, 'profile_support' => 'cisco',
                                             'supported_provider_types' => ['flat', 'vxlan'], 'supported_vnic_types' => ['*'], 'default_ipv4_subnet_pool_label' => 'None', },
+          :instance_options               => {'disable_image' => true, 'disable_instance_snapshot' => true, 'disable_volume' => true, 'disable_volume_snapshot' => true, 'create_volume' => false },
           :file_upload_temp_dir           => '/var/spool/horizon',
           :secure_cookies                 => true,
           :api_versions                   => {'identity' => 2.0},
@@ -130,6 +131,7 @@ describe 'horizon' do
           :default_theme                  => 'default',
           :password_autocomplete          => 'on',
           :images_panel                   => 'angular',
+          :create_image_defaults          => {'image_visibility' => 'private'},
           :password_retrieve              => true,
           :enable_secure_proxy_ssl_header => true,
         })
@@ -178,6 +180,15 @@ describe 'horizon' do
           "    'supported_provider_types': ['flat', 'vxlan'],",
           "    'supported_vnic_types': ['*'],",
           'OPENSTACK_ENABLE_PASSWORD_RETRIEVE = True',
+          'CREATE_IMAGE_DEFAULTS = {',
+          "    'image_visibility': 'private',",
+          "    'config_drive': False,",
+          "    'create_volume': False,",
+          "    'disable_image': True,",
+          "    'disable_instance_snapshot': True,",
+          "    'disable_volume': True,",
+          "    'disable_volume_snapshot': True,",
+          "    'enable_scheduler_hints': True,",
           'OPENSTACK_ENDPOINT_TYPE = "internalURL"',
           'SECONDARY_ENDPOINT_TYPE = "ANY-VALUE"',
           'API_RESULT_LIMIT = 4682',
@@ -589,6 +600,19 @@ describe 'horizon' do
         ])
       end
     end
+
+    context 'with upload mode' do
+      before do
+        params.merge!({
+          :horizon_upload_mode  => 'direct',
+        })
+      end
+      it 'sets HORIZON_IMAGES_UPLOAD_MODE in local_settings.py' do
+        verify_concat_fragment_contents(catalogue, 'local_settings.py', [
+	  'HORIZON_IMAGES_UPLOAD_MODE = direct',
+        ])
+      end
+    end
   end
 
   shared_examples_for 'horizon on RedHat' do
@@ -639,5 +663,12 @@ describe 'horizon' do
       it_behaves_like "horizon on #{facts[:osfamily]}"
     end
   end
+ end
 
-end
+  shared_examples_for 'uses the horizon_upload_mode' do
+    it 'sets HORIZON_IMAGES_UPLOAD_MODE in local_settings.py' do
+      verify_concat_fragment_contents(catalogue, 'local_settings.py', [
+        "HORIZON_IMAGES_UPLOAD_MODE= 'direct'",
+      ])
+    end
+  end

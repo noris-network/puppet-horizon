@@ -91,7 +91,11 @@
 #    Defaults to 'http://docs.openstack.org'.
 #
 #  [*compress_offline*]
-#    (optional) Boolean to enable offline compress of assets.
+#    (optional) Boolean to configure offline compression of assets.
+#    Defaults to True
+#
+#  [*exec_compress_offline*]
+#    (optional) Boolean to enable the execution of manage.py to compress assets
 #    Defaults to True
 #
 #  [*hypervisor_options*]
@@ -140,6 +144,30 @@
 #    'profile_support':  A string indiciating which plugin-specific
 #      profiles to enable.  Defaults to 'None', other options include
 #      'cisco'.
+#
+#  [*instance_options*]
+#    (optional) A hash of parameters to enable or disable instance options
+#    when using the launch instance options under Compute Instances tab.
+#    These options include:
+#      'config_drive': Boolean to set default value of config drive options.
+#        A value of 'True' to have a check in the checkbox or 'False' to have it
+#        unchecked.
+#        Defaults to True.
+#      'create_volume': Boolean to set 'Create Volume' to 'Yes' or 'No' on source
+#        options. Values are True (Yes) or False (No).
+#        Defaults to True.
+#      'disable_image': Boolean to not show 'Image' as a boot source option.
+#        Defaults to False.
+#      'disable_instance_snapshot': Boolean to not show 'Instance Snapshot' as a
+#        boot source option.
+#        Defaults to False.
+#      'disable_volume': Boolean to not show 'Volume' as a boot source option.
+#        Defaults to False.
+#      'disable_volume_snapshot': Boolean to not show 'Volume Snapshot' as a
+#        boot source option.
+#        Defaults to False.
+#      'enable_scheduler_hints': Boolean to allow scheduler hints to be provided.
+#        Defaults to True.
 #
 #  [*configure_apache*]
 #    (optional) Configure Apache for Horizon. (Defaults to true)
@@ -285,6 +313,10 @@
 #   Valid values are 'legacy' and 'angular'
 #   Defaults to 'legacy'
 #
+# [*create_image_defaults*]
+#   (optional) A dictionary of default settings for create image modal.
+#   Defaults to undef - will not add entry to local settings.
+#
 #  [*password_retrieve*]
 #    (optional) Enables the use of 'Retrieve Password' in the Horizon Web UI.
 #    Defaults to false
@@ -371,6 +403,12 @@
 #    Example:
 #      customization_module => "my_project.overrides"
 #
+#  [*horizon_upload_mode*]
+#    (optional)  Horizon provides the upload mode. The default mode is legacy, off
+#     will disable the function in Horizon, direct will allow the user agent to directly
+#     talk to the glance-api.
+#
+#
 # === DEPRECATED group/name
 #
 #  [*fqdn*]
@@ -443,10 +481,12 @@ class horizon(
   $horizon_key                         = undef,
   $horizon_ca                          = undef,
   $compress_offline                    = true,
+  $exec_compress_offline               = true,
   $hypervisor_options                  = {},
   $cinder_options                      = {},
   $keystone_options                    = {},
   $neutron_options                     = {},
+  $instance_options                    = {},
   $file_upload_temp_dir                = '/tmp',
   $policy_files_path                   = undef,
   $policy_files                        = undef,
@@ -467,6 +507,7 @@ class horizon(
   $default_theme                       = false,
   $password_autocomplete               = 'off',
   $images_panel                        = 'legacy',
+  $create_image_defaults               = undef,
   $password_retrieve                   = false,
   $disable_password_reveal             = false,
   $enforce_password_check              = false,
@@ -480,6 +521,7 @@ class horizon(
   $password_validator_help             = undef,
   $enable_user_pass                    = true,
   $customization_module                = undef,
+  $horizon_upload_mode                 = undef,
   # DEPRECATED PARAMETERS
   $custom_theme_path                   = undef,
   $fqdn                                = undef,
@@ -547,12 +589,26 @@ settings_local.py and parameter server_aliases for setting ServerAlias directive
     'profile_support'           => 'None',
   }
 
+  # Default options for the LAUNCH_INSTANCE_DEFAULTS section.  These will
+  # be merged with user-provided options when the local_settings.py.erb
+  # template is interpolated.
+  $instance_defaults = {
+    'config_drive'              => false,
+    'create_volume'             => true,
+    'disable_image'             => false,
+    'disable_instance_snapshot' => false,
+    'disable_volume'            => false,
+    'disable_volume_snapshot'   => false,
+    'enable_scheduler_hints'    => true,
+  }
+
   Service <| title == 'memcached' |> -> Class['horizon']
 
   $hypervisor_options_real = merge($hypervisor_defaults,$hypervisor_options)
   $cinder_options_real     = merge($cinder_defaults,$cinder_options)
   $keystone_options_real   = merge($keystone_defaults, $keystone_options)
   $neutron_options_real    = merge($neutron_defaults,$neutron_options)
+  $instance_options_real   = merge($instance_defaults,$instance_options)
   validate_hash($api_versions)
   validate_re($password_autocomplete, ['^on$', '^off$'])
   validate_re($images_panel, ['^legacy$', '^angular$'])
@@ -595,7 +651,7 @@ settings_local.py and parameter server_aliases for setting ServerAlias directive
     require     => Package['horizon'],
   }
 
-  if $compress_offline {
+  if $exec_compress_offline {
     Concat[$::horizon::params::config_file] ~> Exec['refresh_horizon_django_compress']
     if $::os_package_type == 'rpm' {
       Concat[$::horizon::params::config_file] ~> Exec['refresh_horizon_django_cache'] -> Exec['refresh_horizon_django_compress']
